@@ -7,26 +7,27 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RegisterController extends AbstractController
 {
     #[Route('/register', name: 'app_register', methods: ['POST'])]
-    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
+    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
-        $username = $request->request->get('username');
-        $password = $request->request->get('password');
+         $jsonRecu = json_decode($request->getContent());
+         $username = $jsonRecu->username;
+         $password = $jsonRecu->password;
 
         // Crée un nouvel utilisateur et défini ses propriétés
         $user = new User();
         $user->setUsername($username);
-        $user->setPassword(
-            $passwordEncoder->encodePassword(
-                $user,
-                $password
-            )
+
+        $hashedPassword = $passwordHasher->hashPassword(
+            $user,
+            "$password"
         );
+        $user->setPassword($hashedPassword);
 
         // Valide l'entité de l'utilisateur
         $errors = $validator->validate($user);

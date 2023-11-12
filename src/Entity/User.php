@@ -8,59 +8,41 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * @ApiResource(
- *     collectionOperations={
- *         "get",
- *         "post"={
- *             "method"="POST",
- *             "path"="/register",
- *             "controller"=RegisterController::class,
- *             "read"=false,
- *             "write"=false,
- *             "deserialize"=false,
- *             "validation_groups"={"Default", "create"}
- *         }
- *     },
- *     itemOperations={
- *         "get",
- *         "put",
- *         "delete"
- *     }
- * )
- * @ORM\Entity()
- */
+#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Table(name: '`user`')]
+#[ApiResource(
+  normalizationContext: ['groups' => ['user_get']]
+)]
+#[Get]
+#[GetCollection(normalizationContext: ['groups' => ['user_getAll']])]
+#[Put(normalizationContext: ['groups' => ['user_put']])]
+#[Post(normalizationContext: ['groups' => ['user_post']])]
+#[Patch(normalizationContext: ['groups' => ['user_patch']])]
+#[Delete(normalizationContext: ['groups' => ['user_delete']])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
     private ?int $id = null;
 
-    /**
-     * @ORM\Column(type="string", length=180, unique=true)
-     * @Assert\NotBlank
-     */
+    
+    #[ORM\Column(length:180, unique:true)]
+    #[Assert\NotBlank]
+    #[Groups(['user_get', 'user_put', 'user_post'])]
     private ?string $username = null;
 
-    /**
-     * @ORM\Column(type="json")
-     * @Assert\NotBlank
-     */
+    
+    #[ORM\Column(type:"json")]
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     * @ORM\Column(type="string")
-     * @Assert\NotBlank
-     */
+   
+    #[ORM\Column(type:"string")]
+    #[Groups(['user_get', 'user_put', 'user_post'])]
     private ?string $password = null;
 
-    /**
-     * @ORM\Column(type="integer", options={"default": 0})
-     */
+    
+    #[ORM\Column(type:"integer")]
     private ?int $score = 0;
 
     public function getId(): ?int
