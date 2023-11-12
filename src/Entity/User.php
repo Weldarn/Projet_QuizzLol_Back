@@ -7,42 +7,61 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Controller\RegisterController;
+use Symfony\Component\Serializer\Annotation\Groups;
+use App\Repository\UserRepository;
 
-#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Entity(repositoryClass:UserRepository::class)]
 #[ORM\Table(name: '`user`')]
+#[UniqueEntity(fields: ['username'], message: 'Un compte existe déjà avec ce nom d’utilisateur.')]
 #[ApiResource(
-  normalizationContext: ['groups' => ['user_get']]
+    normalizationContext: ['groups' => ['user:read']],
+    denormalizationContext: ['groups' => ['user:write']],
+    collectionOperations: [
+        'get',
+        'register' => [
+            'method' => 'POST',
+            'path' => '/register',
+            'controller' => RegisterController::class,
+            'openapi_context' => [
+                'summary' => 'Register a new user',
+                'description' => 'Create a new user account.',
+            ],
+            'denormalization_context' => ['groups' => ['user:write']],
+            'validation_groups' => ['Default', 'creation'],
+        ],
+    ],
+    itemOperations: [
+        'get',
+        'put',
+        'patch',
+        'delete',
+    ],
 )]
-#[Get]
-#[GetCollection(normalizationContext: ['groups' => ['user_getAll']])]
-#[Put(normalizationContext: ['groups' => ['user_put']])]
-#[Post(normalizationContext: ['groups' => ['user_post']])]
-#[Patch(normalizationContext: ['groups' => ['user_patch']])]
-#[Delete(normalizationContext: ['groups' => ['user_delete']])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private ?int $id = null;
 
-    
-    #[ORM\Column(length:180, unique:true)]
+    #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank]
-    #[Groups(['user_get', 'user_put', 'user_post'])]
+    #[Groups(['user:read', 'user:write'])]
     private ?string $username = null;
 
-    
-    #[ORM\Column(type:"json")]
+    #[ORM\Column(type: "json")]
+    #[Groups(['user:read'])]
     private array $roles = [];
 
-   
-    #[ORM\Column(type:"string")]
-    #[Groups(['user_get', 'user_put', 'user_post'])]
+    #[ORM\Column]
+    #[Groups(['user:write'])]
     private ?string $password = null;
 
-    
-    #[ORM\Column(type:"integer")]
+    #[ORM\Column(type: "integer")]
+    #[Groups(['user:read', 'user:write'])]
     private ?int $score = 0;
 
     public function getId(): ?int

@@ -16,8 +16,14 @@ class RegisterController extends AbstractController
     public function register(Request $request, UserPasswordHasherInterface $passwordHasher, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
          $jsonRecu = json_decode($request->getContent());
-         $username = $jsonRecu->username;
-         $password = $jsonRecu->password;
+         $username = $jsonRecu->username ?? null;
+         $password = $jsonRecu->password ?? null;
+
+         if (!$username || !$password) {
+            return $this->json([
+                'message' => 'Invalid username or password',
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
         // Crée un nouvel utilisateur et défini ses propriétés
         $user = new User();
