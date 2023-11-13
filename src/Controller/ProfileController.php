@@ -20,10 +20,9 @@ class ProfileController extends AbstractController
     {
         $user = $this->security->getUser();
 
-        // Retourne les info de profil ou une vue
         return $this->json([
             'username' => $user->getUsername(),
-            'score' => $user->getScore(),
+            'scores' => $user->getScores(),
         ]);
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -12,7 +14,7 @@ use App\Controller\RegisterController;
 use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\UserRepository;
 
-#[ORM\Entity(repositoryClass:UserRepository::class)]
+#[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity(fields: ['username'], message: 'Un compte existe déjà avec ce nom d’utilisateur.')]
 #[ApiResource(
@@ -54,15 +56,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: "json")]
     #[Groups(['user:read'])]
-    private array $roles = [];
+    private array $roles = ['ROLE_USER'];
 
     #[ORM\Column]
     #[Groups(['user:write'])]
     private ?string $password = null;
 
-    #[ORM\Column(type: "integer")]
-    #[Groups(['user:read', 'user:write'])]
-    private ?int $score = 0;
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: GameScore::class, orphanRemoval: true, cascade: ['persist'])]
+    private Collection $gameScores;
+
+    public function __construct()
+    {
+        $this->gameScores = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -87,9 +93,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
-        $roles = $this->roles;
-        $roles[] = 'ROLE_USER';
-        return array_unique($roles);
+        return array_unique($this->roles);
     }
 
     public function setRoles(array $roles): self
@@ -109,14 +113,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getScore(): ?int
+    public function getGameScores(): Collection
     {
-        return $this->score;
+        return $this->gameScores;
     }
 
-    public function setScore(int $score): self
+    public function addGameScore(GameScore $gameScore): self
     {
-        $this->score = $score;
+        if (!$this->gameScores->contains($gameScore)) {
+            $this->gameScores[] = $gameScore;
+            $gameScore->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGameScore(GameScore $gameScore): self
+    {
+        if ($this->gameScores->removeElement($gameScore)) {
+            if ($gameScore->getUser() === $this) {
+                $gameScore->setUser(null);
+            }
+        }
+
         return $this;
     }
 
