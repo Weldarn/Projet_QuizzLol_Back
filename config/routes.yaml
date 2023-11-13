@@ -3,5 +3,11 @@ controllers:
     path: ../src/Controller/
     namespace: App\Controller
   type: attribute
+
 api_login_check:
   path: /api/login_check
+
+api_users:
+  path: /api/users
+  controller: App\Controller\UserController::list
+  methods: ["GET"]
