@@ -6,23 +6,29 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Security;
 
-class ProfileController extends AbstractController
+class UserInfoController extends AbstractController
 {
-    private $security;
+    private Security $security;
 
     public function __construct(Security $security)
     {
         $this->security = $security;
     }
 
-    #[Route('/profile', name: 'app_profile')]
-    public function profile(): Response
+    #[Route('/api/user_info', name: 'api_user_info', methods: ['GET'])]
+    public function userInfo(): Response
     {
         $user = $this->security->getUser();
 
+        if (!$user) {
+            return $this->json([
+                'message' => 'User not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
         return $this->json([
             'username' => $user->getUsername(),
-            'scores' => $user->getScores(),
+            // Ajoutez ici d'autres informations de l'utilisateur que vous souhaitez renvoyer
         ]);
     }
 }
